@@ -1,14 +1,20 @@
-FROM ubuntu:14.04
+FROM debian:stretch
 
-RUN echo "deb http://archive.ubuntu.com/ubuntu precise main universe" > /etc/apt/sources.list && \
-    echo "deb http://overviewer.org/debian ./" >> /etc/apt/sources.list && \
-    apt-get update
+ARG mc_ver="1.12.2"
+ARG mc_client="https://launcher.mojang.com/mc/game/1.12.2/client/0f275bc1547d01fa5f56ba34bdc87d981ee12daf/client.jar"
 
-RUN apt-get install -y --force-yes \
-    minecraft-overviewer
+RUN apt update
+RUN apt install -y gnupg wget
+RUN wget -O - https://overviewer.org/debian/overviewer.gpg.asc | apt-key add -
+RUN echo "deb http://overviewer.org/debian ./" >> /etc/apt/sources.list
+RUN apt update
+RUN apt install -y minecraft-overviewer
 
-ADD https://s3.amazonaws.com/Minecraft.Download/versions/1.12/minecraft_server.1.12.jar /home/daemon/.minecraft/versions/1.12/
-RUN chown -R 1:1 /home/daemon
+ADD ${mc_client} /home/daemon/.minecraft/versions/${mc_ver}/${mc_ver}.jar
+
+RUN chown -R 1000:1000 /home/daemon
 ENV HOME=/home/daemon
-USER 1:1
-ENTRYPOINT ["/bin/bash", "-c","overviewer.py --config=/minecraft/overviewer.cfg;overviewer.py --config=/minecraft/overviewer.cfg --genpoi"]
+
+USER 1000:1000
+
+CMD ["/usr/bin/overviewer.py", "--config=/minecraft/overviewer.cfg"]
